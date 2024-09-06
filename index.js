@@ -2,6 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const http = require('http');
+const WebSocket = require('ws');
 
 const app = express();
 const port = 3000;
@@ -19,6 +21,19 @@ db.serialize(() => {
   );
 });
 
+// Create HTTP server and WebSocket server
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+// Broadcast function to send data to all connected clients
+function broadcast(data) {
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
+}
+
 // Webhook endpoint
 app.post('/webhook', (req, res) => {
   const data = JSON.stringify(req.body);
@@ -30,6 +45,8 @@ app.post('/webhook', (req, res) => {
       if (err) {
         return res.status(500).send('Database error');
       }
+      // Broadcast new data to all WebSocket clients
+      broadcast({ data, datetime });
       res.status(200).send('Data received');
     }
   );
@@ -46,6 +63,6 @@ app.get('/data', (req, res) => {
 });
 
 // Start server
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });

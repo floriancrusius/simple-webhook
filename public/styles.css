@@ -39,6 +39,10 @@ body {
     cursor: pointer;
   }
   
+  #request-list li.selected {
+    background-color: #d3d3d3; /* Light gray background for selected item */
+  }
+  
   #request-list li:hover {
     background: #eaeaea;
   }
